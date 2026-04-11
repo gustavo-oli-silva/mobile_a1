@@ -13,9 +13,7 @@ class RefeicoesTela extends StatefulWidget {
 }
 
 class _RefeicoesTelaState extends State<RefeicoesTela> {
-  List<Refeicao> refeicoes = [
-    Refeicao('Macarrao seila', 67.67, Restaurante.comDescricao('Aura', 'farmei legal'))
-  ];
+  List<Refeicao> refeicoes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +69,7 @@ class _RefeicoesTelaState extends State<RefeicoesTela> {
           Text('Nenhuma refeiçao encontrada...',
           style: TextStyle(fontSize: 40),
           textAlign: TextAlign.center),
-          Botao(texto: 'Registre uma agora mesmo!', onPressed: () { })
+          Botao(texto: 'Registre uma agora mesmo!', onPressed: () { _showRefeicoesModal(context); })
         ],
       );
   }

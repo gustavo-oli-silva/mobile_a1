@@ -12,9 +12,7 @@ class RestauranteTela extends StatefulWidget {
 }
 
 class _RestauranteTelaState extends State<RestauranteTela> {
-  List<Restaurante> restaurantes = [
-    Restaurante.comDescricao('Fazendinha', 'massa')
-  ];
+  List<Restaurante> restaurantes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +54,7 @@ class _RestauranteTelaState extends State<RestauranteTela> {
           Text('Nenhum restaurante encontrado...',
           style: TextStyle(fontSize: 40),
           textAlign: TextAlign.center),
-          Botao(texto: 'Registre um agora mesmo!', onPressed: () { })
+          Botao(texto: 'Registre um agora mesmo!', onPressed: () { _showRestauranteModal(context); })
         ],
       );
   }

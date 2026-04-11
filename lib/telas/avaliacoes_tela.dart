@@ -14,9 +14,7 @@ class AvaliacoesTela extends StatefulWidget {
 }
 
 class _AvaliacoesTelaState extends State<AvaliacoesTela> {
-  List<Avaliacao> avaliacoes = [
-    Avaliacao(Refeicao('Avaliacao teste', 55.90, Restaurante('Fazendinha')), 5.0, 3.0, 2.0, 'descriçao teste')
-  ];
+  List<Avaliacao> avaliacoes = [];
 
   @override
   Widget build(BuildContext context) {

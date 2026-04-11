@@ -14,10 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       home: NavigatorPage(),
     );
   }
@@ -36,17 +33,36 @@ class _NavigatorPageState extends State<NavigatorPage> {
   final List<Widget> _pages = [
     AvaliacoesTela(),
     RefeicoesTela(),
-    RestauranteTela()
+    RestauranteTela(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Michelin', 
-        style: TextStyle(color: Colors.white)), 
-        backgroundColor: Colors.red
+        title: const Text(
+          'My Michelin',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2, 
+          ),
         ),
+        centerTitle: true, 
+        backgroundColor: Colors.red.shade800, 
+        elevation: 4, 
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(16), 
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: _pages[_selectedPageIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedPageIndex,
@@ -54,12 +70,20 @@ class _NavigatorPageState extends State<NavigatorPage> {
           _selectedPageIndex = value;
         }),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.star), label: 'Avaliaçoes'),
-          NavigationDestination(icon: Icon(Icons.restaurant_menu), label: 'Refeiçoes'),
-          NavigationDestination(icon: Icon(Icons.food_bank), label: 'Restaurantes')
+          NavigationDestination(
+            icon: Icon(Icons.star), 
+            label: 'Avaliaçoes'
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Refeiçoes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.food_bank),
+            label: 'Restaurantes',
+          ),
         ],
-        ),
+      ),
     );
   }
 }
-
