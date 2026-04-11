@@ -18,11 +18,20 @@ class _RefeicoesTelaState extends State<RefeicoesTela> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: refeicoes.isNotEmpty ? FloatingActionButton.extended(
-        onPressed: () { _showRefeicoesModal(context); },
-        icon: const Icon(Icons.add),
-        label: const Text('Adicionar'),
-      ) : null,
+      floatingActionButton: refeicoes.isNotEmpty 
+    ? FloatingActionButton.extended(
+        onPressed: () { 
+          _showRefeicoesModal(context); 
+        },
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Adicionar',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+      ) 
+    : null,
       body: SizedBox(
         width: double.infinity,
         child: refeicoes.isNotEmpty ? _content() : _ifEmpty(context)

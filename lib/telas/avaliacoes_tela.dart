@@ -19,11 +19,20 @@ class _AvaliacoesTelaState extends State<AvaliacoesTela> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: avaliacoes.isNotEmpty ? FloatingActionButton.extended(
-        onPressed: () { _showAvaliacaoModal(context); },
-        icon: const Icon(Icons.add),
-        label: const Text('Avalie'),
-      ) : null,
+      floatingActionButton: avaliacoes.isNotEmpty 
+    ? FloatingActionButton.extended(
+        onPressed: () { 
+          _showAvaliacaoModal(context); 
+        },
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Avalie',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+      ) 
+    : null,
       body: SizedBox(
         width: double.infinity,
         child: avaliacoes.isNotEmpty ? _content() : _ifEmpty(context)

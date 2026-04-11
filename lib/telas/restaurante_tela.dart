@@ -17,11 +17,20 @@ class _RestauranteTelaState extends State<RestauranteTela> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: restaurantes.isNotEmpty ? FloatingActionButton.extended(
-        onPressed: () { _showRestauranteModal(context); },
-        icon: const Icon(Icons.add),
-        label: const Text('Adicionar'),
-      ) : null,
+      floatingActionButton: restaurantes.isNotEmpty 
+    ? FloatingActionButton.extended(
+        onPressed: () { 
+          _showRestauranteModal(context); 
+        },
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Adicionar',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+      ) 
+    : null,
       body: SizedBox(
         width: double.infinity,
         child: restaurantes.isNotEmpty ? _content() : _ifEmpty(context),
