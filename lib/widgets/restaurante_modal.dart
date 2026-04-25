@@ -4,8 +4,9 @@ import 'package:projeto_a1/widgets/botao.dart';
 
 class RestauranteModal extends StatefulWidget {
   final Function(Restaurante) onSalvar;
+  final Restaurante? restauranteExistente;
 
-  const RestauranteModal({super.key, required this.onSalvar});
+  const RestauranteModal({super.key, required this.onSalvar, this.restauranteExistente});
 
   @override
   State<RestauranteModal> createState() => _RestauranteModalState();
@@ -16,6 +17,17 @@ class _RestauranteModalState extends State<RestauranteModal> {
   final descricaoController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.restauranteExistente != null) {
+      nomeController.text = widget.restauranteExistente!.nome;
+      if (widget.restauranteExistente!.descricao != null) {
+        descricaoController.text = widget.restauranteExistente!.descricao!;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 24, 24,
@@ -24,6 +36,12 @@ class _RestauranteModalState extends State<RestauranteModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            widget.restauranteExistente == null ? 'Novo Restaurante' : 'Editar Restaurante',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: nomeController,
             decoration: const InputDecoration(
@@ -47,6 +65,10 @@ class _RestauranteModalState extends State<RestauranteModal> {
               final restaurante = descricaoController.text.isNotEmpty
                   ? Restaurante.comDescricao(nomeController.text, descricaoController.text)
                   : Restaurante(nomeController.text);
+              
+              if (widget.restauranteExistente != null) {
+                restaurante.id = widget.restauranteExistente!.id;
+              }
               widget.onSalvar(restaurante);
             },
           ),

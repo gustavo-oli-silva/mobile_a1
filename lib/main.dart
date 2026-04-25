@@ -1,9 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:projeto_a1/telas/avaliacoes_tela.dart';
 import 'package:projeto_a1/telas/refeicoes_tela.dart';
 import 'package:projeto_a1/telas/restaurante_tela.dart';
 
 void main() {
+  if (Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   runApp(const MyApp());
 }
 

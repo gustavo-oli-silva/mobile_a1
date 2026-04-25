@@ -6,8 +6,9 @@ import 'package:projeto_a1/widgets/botao.dart';
 class AvaliacaoModal extends StatefulWidget {
   final List<Refeicao> refeicoes;
   final Function(Avaliacao) onSalvar;
+  final Avaliacao? avaliacaoExistente;
 
-  const AvaliacaoModal({super.key, required this.refeicoes, required this.onSalvar});
+  const AvaliacaoModal({super.key, required this.refeicoes, required this.onSalvar, this.avaliacaoExistente});
 
   @override
   State<AvaliacaoModal> createState() => _AvaliacaoModalState();
@@ -21,6 +22,22 @@ class _AvaliacaoModalState extends State<AvaliacaoModal> {
   final descricaoController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.avaliacaoExistente != null) {
+      notaApresentacao = widget.avaliacaoExistente!.notaApresentacao;
+      notaPorcao = widget.avaliacaoExistente!.notaPorcao;
+      notaTemperatura = widget.avaliacaoExistente!.notaTemperatura;
+      descricaoController.text = widget.avaliacaoExistente!.anotacao;
+      try {
+        pratoSelecionado = widget.refeicoes.firstWhere((r) => r.id == widget.avaliacaoExistente!.prato.id);
+      } catch (e) {
+        pratoSelecionado = null;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 24, 24,
@@ -29,9 +46,15 @@ class _AvaliacaoModalState extends State<AvaliacaoModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            widget.avaliacaoExistente == null ? 'Nova Avaliação' : 'Editar Avaliação',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
           DropdownButtonFormField<Refeicao>(
             hint: const Text('Selecione o prato'),
-            initialValue: pratoSelecionado,
+            value: pratoSelecionado,
             items: widget.refeicoes.map((r) => DropdownMenuItem(
               value: r,
               child: Text(r.nome),
@@ -70,13 +93,18 @@ class _AvaliacaoModalState extends State<AvaliacaoModal> {
             texto: 'Salvar',
             onPressed: () {
               if (pratoSelecionado == null) return;
-              widget.onSalvar(Avaliacao(
+              final avaliacao = Avaliacao(
                 pratoSelecionado!,
                 notaApresentacao,
                 notaPorcao,
                 notaTemperatura,
                 descricaoController.text,
-              ));
+              );
+              
+              if (widget.avaliacaoExistente != null) {
+                avaliacao.id = widget.avaliacaoExistente!.id;
+              }
+              widget.onSalvar(avaliacao);
             },
           ),
         ],

@@ -1,3 +1,3 @@
 abstract class DefaultModel {
-  int id = 0;
+  int? id;
 }

@@ -3,8 +3,15 @@ import 'package:projeto_a1/modelos/avaliacao.dart';
 
 class AvaliacaoCard extends StatelessWidget {
   final Avaliacao avaliacao;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
-  const AvaliacaoCard({super.key, required this.avaliacao});
+  const AvaliacaoCard({
+    super.key, 
+    required this.avaliacao,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   Widget _linha(String label, double nota) {
     return Row(
@@ -31,12 +38,49 @@ class AvaliacaoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(avaliacao.prato.nome,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            Text(avaliacao.prato.restaurante.nome,
-                style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
-            Text('R\$ ${avaliacao.prato.preco.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(avaliacao.prato.nome,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      Text(avaliacao.prato.restaurante.nome,
+                          style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+                      Text('R\$ ${avaliacao.prato.preco.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Excluir avaliação?'),
+                        content: const Text('Tem certeza de que deseja excluir esta avaliação?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              onDelete();
+                            }, 
+                            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      )
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             _linha('Apresentação', avaliacao.notaApresentacao),
             const SizedBox(height: 4),
