@@ -1,15 +1,22 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:projeto_a1/telas/avaliacoes_tela.dart';
 import 'package:projeto_a1/telas/refeicoes_tela.dart';
 import 'package:projeto_a1/telas/restaurante_tela.dart';
+import 'package:projeto_a1/telas/login_tela.dart';
 
-void main() {
-  if (Platform.isWindows || Platform.isLinux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await dotenv.load(fileName: ".env");
+  
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+  );
+
   runApp(const MyApp());
 }
 
@@ -20,9 +27,41 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: NavigatorPage(),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+      home: const AuthWrapper(),
     );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = Supabase.instance.client.auth.currentUser;
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        setState(() {
+          _user = data.session?.user;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_user == null) {
+      return const LoginTela();
+    }
+    return const NavigatorPage();
   }
 }
 
@@ -64,8 +103,11 @@ class _NavigatorPageState extends State<NavigatorPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+            tooltip: 'Sair',
           ),
         ],
       ),
@@ -78,11 +120,11 @@ class _NavigatorPageState extends State<NavigatorPage> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.star), 
-            label: 'Avaliaçoes'
+            label: 'Avaliações'
           ),
           NavigationDestination(
             icon: Icon(Icons.restaurant_menu),
-            label: 'Refeiçoes',
+            label: 'Refeições',
           ),
           NavigationDestination(
             icon: Icon(Icons.food_bank),

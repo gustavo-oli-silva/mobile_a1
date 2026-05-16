@@ -1,69 +1,46 @@
-import 'package:projeto_a1/banco/database_helper.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:projeto_a1/modelos/refeicao.dart';
 import 'package:projeto_a1/repositorios/restaurante_repositorio.dart';
 
 class RefeicaoRepositorio {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final _supabase = Supabase.instance.client;
   final RestauranteRepositorio _restauranteRepo = RestauranteRepositorio();
 
   Future<int> inserir(Refeicao refeicao) async {
-    final db = await _dbHelper.database;
-    final id = await db.insert('refeicoes', refeicao.toMap());
+    final data = refeicao.toMap();
+    data.remove('id');
+    final response = await _supabase.from('refeicoes').insert(data).select('id').single();
+    final id = response['id'] as int;
     refeicao.id = id;
     return id;
   }
 
   Future<List<Refeicao>> listar() async {
-    final db = await _dbHelper.database;
-    final maps = await db.rawQuery('''
-      SELECT r.*, res.id AS res_id, res.nome AS res_nome, res.descricao AS res_descricao
-      FROM refeicoes r
-      INNER JOIN restaurantes res ON r.restaurante_id = res.id
-      ORDER BY r.nome ASC
-    ''');
+    final maps = await _supabase.from('refeicoes').select('*, restaurantes(*)').order('nome', ascending: true);
 
     return maps.map((m) {
-      final restauranteMap = {
-        'id': m['res_id'],
-        'nome': m['res_nome'],
-        'descricao': m['res_descricao'],
-      };
-      final restaurante = RestauranteRepositorio().fromMap(restauranteMap);
+      final restauranteMap = m['restaurantes'] as Map<String, dynamic>;
+      final restaurante = _restauranteRepo.fromMap(restauranteMap);
       return Refeicao.fromMap(m, restaurante);
     }).toList();
   }
 
   Future<Refeicao?> buscarPorId(int id) async {
-    final db = await _dbHelper.database;
-    final maps = await db.rawQuery('''
-      SELECT r.*, res.id AS res_id, res.nome AS res_nome, res.descricao AS res_descricao
-      FROM refeicoes r
-      INNER JOIN restaurantes res ON r.restaurante_id = res.id
-      WHERE r.id = ?
-    ''', [id]);
-    if (maps.isEmpty) return null;
-    final m = maps.first;
-    final restauranteMap = {
-      'id': m['res_id'],
-      'nome': m['res_nome'],
-      'descricao': m['res_descricao'],
-    };
-    final restaurante = RestauranteRepositorio().fromMap(restauranteMap);
+    final m = await _supabase.from('refeicoes').select('*, restaurantes(*)').eq('id', id).maybeSingle();
+    if (m == null) return null;
+    
+    final restauranteMap = m['restaurantes'] as Map<String, dynamic>;
+    final restaurante = _restauranteRepo.fromMap(restauranteMap);
     return Refeicao.fromMap(m, restaurante);
   }
 
   Future<int> deletar(int id) async {
-    final db = await _dbHelper.database;
-    return await db.delete('refeicoes', where: 'id = ?', whereArgs: [id]);
+    await _supabase.from('refeicoes').delete().eq('id', id);
+    return id;
   }
 
   Future<int> atualizar(Refeicao refeicao) async {
-    final db = await _dbHelper.database;
-    return await db.update(
-      'refeicoes',
-      refeicao.toMap(),
-      where: 'id = ?',
-      whereArgs: [refeicao.id],
-    );
+    await _supabase.from('refeicoes').update(refeicao.toMap()).eq('id', refeicao.id!);
+    return refeicao.id!;
   }
 }
