@@ -10,7 +10,7 @@ class Refeicao extends DefaultModel {
   Refeicao(this.nome, this.preco, this.restaurante);
   Refeicao.comDescricao(this.nome, this.descricao, this.preco, this.restaurante);
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
       'nome': nome,
@@ -20,7 +20,9 @@ class Refeicao extends DefaultModel {
     };
   }
 
-  factory Refeicao.fromMap(Map<String, dynamic> map, Restaurante restaurante) {
+  Map<String, dynamic> toMap() => toJson();
+
+  factory Refeicao.fromJson(Map<String, dynamic> map, Restaurante restaurante) {
     final r = Refeicao(
       map['nome'] as String,
       (map['preco'] as num).toDouble(),
@@ -30,6 +32,16 @@ class Refeicao extends DefaultModel {
     r.descricao = map['descricao'] as String?;
     return r;
   }
+
+  factory Refeicao.fromMap(Map<String, dynamic> map, Restaurante restaurante) =>
+      Refeicao.fromJson(map, restaurante);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is Refeicao && id != null && id == other.id);
+
+  @override
+  int get hashCode => id?.hashCode ?? nome.hashCode;
 
   @override
   String toString() => nome;

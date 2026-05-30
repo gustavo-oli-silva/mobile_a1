@@ -1,41 +1,46 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:projeto_a1/modelos/avaliacao.dart';
-import 'package:projeto_a1/repositorios/refeicao_repositorio.dart';
+import 'package:projeto_a1/modelos/refeicao.dart';
+import 'package:projeto_a1/modelos/restaurante.dart';
 
+/// Repositório: apenas acesso a dados via Supabase. Sem lógica de negócio.
+/// BUGFIX: listar() agora usa um único join ao invés de N queries separadas.
 class AvaliacaoRepositorio {
   final _supabase = Supabase.instance.client;
-  final RefeicaoRepositorio _refeicaoRepo = RefeicaoRepositorio();
 
   Future<int> inserir(Avaliacao avaliacao) async {
-    final data = avaliacao.toMap();
-    data.remove('id');
-    final response = await _supabase.from('avaliacoes').insert(data).select('id').single();
+    final data = avaliacao.toJson()..remove('id');
+    final response =
+        await _supabase.from('avaliacoes').insert(data).select('id').single();
     final id = response['id'] as int;
     avaliacao.id = id;
     return id;
   }
 
   Future<List<Avaliacao>> listar() async {
-    final maps = await _supabase.from('avaliacoes').select('*, refeicoes(*, restaurantes(*))').order('id', ascending: false);
+    // Uma única query com joins aninhados — corrige o N+1 original
+    final maps = await _supabase
+        .from('avaliacoes')
+        .select('*, refeicoes(*, restaurantes(*))')
+        .order('id', ascending: false);
 
-    final List<Avaliacao> avaliacoes = [];
-    for (final m in maps) {
-      final refeicaoId = m['refeicao_id'] as int;
-      final refeicao = await _refeicaoRepo.buscarPorId(refeicaoId);
-      if (refeicao != null) {
-        avaliacoes.add(Avaliacao.fromMap(m, refeicao));
-      }
-    }
-    return avaliacoes;
+    return maps.map((m) {
+      final refeicaoMap = m['refeicoes'] as Map<String, dynamic>;
+      final restauranteMap = refeicaoMap['restaurantes'] as Map<String, dynamic>;
+      final restaurante = Restaurante.fromJson(restauranteMap);
+      final refeicao = Refeicao.fromJson(refeicaoMap, restaurante);
+      return Avaliacao.fromJson(m, refeicao);
+    }).toList();
   }
 
-  Future<int> deletar(int id) async {
+  Future<void> deletar(int id) async {
     await _supabase.from('avaliacoes').delete().eq('id', id);
-    return id;
   }
 
-  Future<int> atualizar(Avaliacao avaliacao) async {
-    await _supabase.from('avaliacoes').update(avaliacao.toMap()).eq('id', avaliacao.id!);
-    return avaliacao.id!;
+  Future<void> atualizar(Avaliacao avaliacao) async {
+    await _supabase
+        .from('avaliacoes')
+        .update(avaliacao.toJson())
+        .eq('id', avaliacao.id!);
   }
 }

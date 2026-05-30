@@ -1,12 +1,20 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:projeto_a1/controllers/refeicao_controller.dart';
+import 'package:projeto_a1/controllers/restaurante_controller.dart';
 import 'package:projeto_a1/modelos/refeicao.dart';
 import 'package:projeto_a1/modelos/restaurante.dart';
-import 'package:projeto_a1/repositorios/refeicao_repositorio.dart';
-import 'package:projeto_a1/repositorios/restaurante_repositorio.dart';
 import 'package:projeto_a1/widgets/botao.dart';
 import 'package:projeto_a1/widgets/refeicao_card.dart';
 import 'package:projeto_a1/widgets/refeicao_modal.dart';
 
+/// View: apenas UI. Lê estado do RefeicaoController (e RestauranteController
+/// para popular o filtro de restaurante) via Provider.
 class RefeicoesTela extends StatefulWidget {
   const RefeicoesTela({super.key});
 
@@ -15,86 +23,176 @@ class RefeicoesTela extends StatefulWidget {
 }
 
 class _RefeicoesTelaState extends State<RefeicoesTela> {
-  final RefeicaoRepositorio _repositorio = RefeicaoRepositorio();
-  final RestauranteRepositorio _restauranteRepositorio = RestauranteRepositorio();
-  List<Refeicao> refeicoes = [];
-  List<Restaurante> restaurantes = [];
-  bool _carregando = true;
+  final _buscaController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _carregarDados();
-  }
-
-  Future<void> _carregarDados() async {
-    setState(() => _carregando = true);
-    final refeicoesList = await _repositorio.listar();
-    final restaurantesList = await _restauranteRepositorio.listar();
-    setState(() {
-      refeicoes = refeicoesList;
-      restaurantes = restaurantesList;
-      _carregando = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RefeicaoController>().carregar();
+      context.read<RestauranteController>().carregar();
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_carregando) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
 
-    return Scaffold(
-      floatingActionButton: refeicoes.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                _showRefeicoesModal(context);
-              },
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Adicionar',
-                style: TextStyle(color: Colors.white),
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<RefeicaoController, RestauranteController>(
+      builder: (context, controller, restauranteCtrl, _) {
+        if (controller.carregando) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (controller.erro != null) {
+          return Center(child: Text('Erro: ${controller.erro}'));
+        }
+
+        final lista = controller.listaFiltrada;
+        final restaurantes = restauranteCtrl.listaFiltrada;
+
+        return Scaffold(
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (lista.isNotEmpty) ...[
+                FloatingActionButton(
+                  heroTag: 'pdf_refeicao',
+                  mini: true,
+                  backgroundColor: Colors.red.shade800,
+                  tooltip: 'Exportar PDF',
+                  onPressed: () => _exportarPdf(controller),
+                  child: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+              ],
+              FloatingActionButton.extended(
+                heroTag: 'add_refeicao',
+                onPressed: () =>
+                    _showModal(context, controller, restaurantes),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text('Adicionar',
+                    style: TextStyle(color: Colors.white)),
+                backgroundColor: Colors.red,
               ),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            )
-          : null,
-      body: SizedBox(
-        width: double.infinity,
-        child: refeicoes.isNotEmpty ? _content() : _ifEmpty(context),
-      ),
+            ],
+          ),
+          body: Column(
+            children: [
+              // Filtro por texto
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: _buscaController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar refeição...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _buscaController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _buscaController.clear();
+                              controller.aplicarFiltro(query: '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onChanged: (q) {
+                    setState(() {});
+                    controller.aplicarFiltro(query: q);
+                  },
+                ),
+              ),
+              // Filtro por restaurante
+              if (restaurantes.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DropdownButtonFormField<Restaurante?>(
+                    decoration: InputDecoration(
+                      labelText: 'Filtrar por restaurante',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    value: controller.filtroRestaurante,
+                    items: [
+                      const DropdownMenuItem<Restaurante?>(
+                        value: null,
+                        child: Text('Todos'),
+                      ),
+                      ...restaurantes.map((r) => DropdownMenuItem(
+                            value: r,
+                            child: Text(r.nome),
+                          )),
+                    ],
+                    onChanged: (r) {
+                      if (r == null) {
+                        controller.limparFiltroRestaurante();
+                      } else {
+                        controller.aplicarFiltro(restaurante: r);
+                      }
+                    },
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: lista.isNotEmpty
+                    ? ListView.builder(
+                        itemCount: lista.length,
+                        itemBuilder: (context, index) {
+                          final refeicao = lista[index];
+                          return RefeicaoCard(
+                            refeicao: refeicao,
+                            onEdit: () => _showModal(
+                              context, controller, restaurantes,
+                              refeicaoExistente: refeicao,
+                            ),
+                            onDelete: () async {
+                              if (refeicao.id != null) {
+                                await controller.deletar(refeicao.id!);
+                              }
+                            },
+                          );
+                        },
+                      )
+                    : _ifEmpty(context, controller, restaurantes),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _content() {
+  Widget _ifEmpty(BuildContext context, RefeicaoController controller,
+      List<Restaurante> restaurantes) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 24),
-        Expanded(
-          child: ListView.builder(
-            itemCount: refeicoes.length,
-            itemBuilder: (context, index) {
-              final refeicao = refeicoes[index];
-              return RefeicaoCard(
-                refeicao: refeicao,
-                onEdit: () => _showRefeicoesModal(context, refeicaoExistente: refeicao),
-                onDelete: () async {
-                  if (refeicao.id != null) {
-                    await _repositorio.deletar(refeicao.id!);
-                    await _carregarDados();
-                  }
-                },
-              );
-            },
-          ),
+        const Text(
+          'Nenhuma refeição encontrada...',
+          style: TextStyle(fontSize: 32),
+          textAlign: TextAlign.center,
+        ),
+        Botao(
+          texto: 'Registre uma agora mesmo!',
+          onPressed: () => _showModal(context, controller, restaurantes),
         ),
       ],
     );
   }
 
-  void _showRefeicoesModal(BuildContext context, {Refeicao? refeicaoExistente}) {
+  void _showModal(BuildContext context, RefeicaoController controller,
+      List<Restaurante> restaurantes,
+      {Refeicao? refeicaoExistente}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -102,35 +200,40 @@ class _RefeicoesTelaState extends State<RefeicoesTela> {
         restaurantes: restaurantes,
         refeicaoExistente: refeicaoExistente,
         onSalvar: (refeicao) async {
-          if (refeicao.id != null) {
-            await _repositorio.atualizar(refeicao);
-          } else {
-            await _repositorio.inserir(refeicao);
-          }
+          await controller.salvar(refeicao);
           if (context.mounted) Navigator.pop(context);
-          await _carregarDados();
         },
       ),
     );
   }
 
-  Widget _ifEmpty(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Text(
-          'Nenhuma refeição encontrada...',
-          style: TextStyle(fontSize: 40),
-          textAlign: TextAlign.center,
-        ),
-        Botao(
-          texto: 'Registre uma agora mesmo!',
-          onPressed: () {
-            _showRefeicoesModal(context);
-          },
-        ),
-      ],
-    );
+  Future<void> _exportarPdf(RefeicaoController controller) async {
+    try {
+      if (controller.listaFiltrada.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nenhum dado para exportar.')),
+        );
+        return;
+      }
+      final bytes = await controller.gerarBytesPdf();
+
+      if (!kIsWeb &&
+          (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
+        final path = await controller.exportarPdfDesktop();
+        await OpenFile.open(path);
+      } else {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/refeicoes.pdf');
+        await file.writeAsBytes(bytes);
+        await Share.shareXFiles([XFile(file.path)],
+            text: 'Relatório de Refeições');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao gerar PDF: $e')),
+        );
+      }
+    }
   }
 }

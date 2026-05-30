@@ -8,9 +8,13 @@ class Avaliacao extends DefaultModel {
   String anotacao;
   Refeicao prato;
 
-  Avaliacao(this.prato, this.notaApresentacao, this.notaPorcao, this.notaTemperatura, this.anotacao);
+  Avaliacao(this.prato, this.notaApresentacao, this.notaPorcao,
+      this.notaTemperatura, this.anotacao);
 
-  Map<String, dynamic> toMap() {
+  double get notaMedia =>
+      (notaApresentacao + notaPorcao + notaTemperatura) / 3;
+
+  Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
       'nota_apresentacao': notaApresentacao,
@@ -21,7 +25,9 @@ class Avaliacao extends DefaultModel {
     };
   }
 
-  factory Avaliacao.fromMap(Map<String, dynamic> map, Refeicao refeicao) {
+  Map<String, dynamic> toMap() => toJson();
+
+  factory Avaliacao.fromJson(Map<String, dynamic> map, Refeicao refeicao) {
     final a = Avaliacao(
       refeicao,
       (map['nota_apresentacao'] as num).toDouble(),
@@ -32,4 +38,7 @@ class Avaliacao extends DefaultModel {
     a.id = map['id'] as int?;
     return a;
   }
+
+  factory Avaliacao.fromMap(Map<String, dynamic> map, Refeicao refeicao) =>
+      Avaliacao.fromJson(map, refeicao);
 }

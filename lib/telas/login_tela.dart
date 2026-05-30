@@ -14,11 +14,22 @@ class _LoginTelaState extends State<LoginTela> {
   bool _isLoading = false;
 
   Future<void> _signInWithEmail() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha o email e a senha.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
     } on AuthException catch (error) {
       if (mounted) {
@@ -38,11 +49,22 @@ class _LoginTelaState extends State<LoginTela> {
   }
 
   Future<void> _signUpWithEmail() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha o email e a senha para criar uma conta.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await Supabase.instance.client.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
