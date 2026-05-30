@@ -45,9 +45,10 @@ class RefeicaoRepositorio {
   }
 
   Future<void> atualizar(Refeicao refeicao) async {
+    final data = refeicao.toJson()..remove('id');
     await _supabase
         .from('refeicoes')
-        .update(refeicao.toJson())
+        .update(data)
         .eq('id', refeicao.id!);
   }
 }

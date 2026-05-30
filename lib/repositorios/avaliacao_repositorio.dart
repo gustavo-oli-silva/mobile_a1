@@ -38,9 +38,10 @@ class AvaliacaoRepositorio {
   }
 
   Future<void> atualizar(Avaliacao avaliacao) async {
+    final data = avaliacao.toJson()..remove('id');
     await _supabase
         .from('avaliacoes')
-        .update(avaliacao.toJson())
+        .update(data)
         .eq('id', avaliacao.id!);
   }
 }

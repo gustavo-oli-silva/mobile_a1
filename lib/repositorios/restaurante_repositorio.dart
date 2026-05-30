@@ -37,9 +37,10 @@ class RestauranteRepositorio {
   }
 
   Future<void> atualizar(Restaurante restaurante) async {
+    final data = restaurante.toJson()..remove('id');
     await _supabase
         .from('restaurantes')
-        .update(restaurante.toJson())
+        .update(data)
         .eq('id', restaurante.id!);
   }
 }
